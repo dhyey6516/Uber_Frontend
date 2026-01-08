@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
 
-const API_BASE_URL = import.meta.env.VITE_BASE_URL;
+// Get API URL from environment or use default
+const API_BASE_URL = import.meta.env.VITE_BASE_URL || 'https://your-backend-url.com';
 
 class SocketManager {
   constructor() {

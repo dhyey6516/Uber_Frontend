@@ -1,4 +1,12 @@
-const API_BASE_URL = import.meta.env.VITE_BASE_URL;
+// Get API URL from environment or use default
+// For production builds, set VITE_BASE_URL in GitHub Secrets
+const API_BASE_URL = import.meta.env.VITE_BASE_URL || 'https://your-backend-url.com';
+
+// Validate API URL
+if (!import.meta.env.VITE_BASE_URL) {
+  console.warn('VITE_BASE_URL is not set! Using default:', API_BASE_URL);
+  console.warn('Please set VITE_BASE_URL in GitHub Secrets or workflow variables for production builds.');
+}
 
 export const api = {
   async register(userData) {

@@ -37,7 +37,20 @@ jobs:
         run: npm install
 
       - name: Build web app
-        run: npm run build
+        env:
+          # Set your backend URL here or in GitHub Secrets/Variables
+          # GitHub Secrets: Settings > Secrets and variables > Actions > New repository secret
+          # GitHub Variables: Settings > Secrets and variables > Actions > Variables tab
+          VITE_BASE_URL: ${{ secrets.VITE_BASE_URL || vars.VITE_BASE_URL }}
+        run: |
+          if [ -z "$VITE_BASE_URL" ]; then
+            echo "⚠️  WARNING: VITE_BASE_URL is not set!"
+            echo "Please set it in GitHub Secrets or Variables"
+            echo "The app will use a default URL which may not work correctly"
+          else
+            echo "✅ Using API URL: $VITE_BASE_URL"
+          fi
+          npm run build
 
       - name: Add Android platform (if not exists)
         run: |
