@@ -1,0 +1,7 @@
+{
+  "appId": "com.uber.app",
+  "appName": "Uber",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
+
