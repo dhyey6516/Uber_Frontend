@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Uber</string>
+    <string name="title_activity_main">Uber</string>
+    <string name="package_name">com.uber.app</string>
+    <string name="custom_url_scheme">com.uber.app</string>
+</resources>

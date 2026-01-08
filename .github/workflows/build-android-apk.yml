@@ -53,17 +53,42 @@ jobs:
         working-directory: ./android
         run: chmod +x gradlew
 
+      - name: Create debug keystore (if needed)
+        working-directory: ./android
+        run: |
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
       - name: Build Android APK
         working-directory: ./android
         run: ./gradlew assembleRelease
+
+      - name: Verify APK was built
+        working-directory: ./android
+        run: |
+          if [ ! -f "app/build/outputs/apk/release/app-release.apk" ]; then
+            echo "APK not found! Listing files:"
+            ls -la app/build/outputs/apk/release/ || echo "Release directory doesn't exist"
+            exit 1
+          fi
+          echo "APK found successfully"
+          ls -lh app/build/outputs/apk/release/app-release.apk
 
       - name: Find APK
         id: find_apk
         working-directory: ./android
         run: |
           APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            echo "Error: APK not found!"
+            exit 1
+          fi
           echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
           echo "Found APK: $APK_PATH"
+          # Verify APK is valid
+          file "$APK_PATH" || echo "Warning: file command not available"
 
       - name: Get version from package.json
         id: get_version
@@ -86,6 +111,11 @@ jobs:
             - Build Number: ${{ github.run_number }}
             - Commit: ${{ github.sha }}
             - Branch: ${{ github.ref_name }}
+            
+            **Installation:**
+            - This APK is signed with a debug key for testing purposes
+            - You may need to enable "Install from unknown sources" in your device settings
+            - For production releases, configure a proper release keystore
           draft: false
           prerelease: false
         env:

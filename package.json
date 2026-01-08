@@ -17,6 +17,7 @@
   "dependencies": {
     "@capacitor/android": "^6.2.0",
     "@capacitor/core": "^6.2.0",
+    "@capacitor/geolocation": "^6.0.0",
     "@capacitor/preferences": "^6.0.3",
     "@radix-ui/react-toast": "^1.2.15",
     "class-variance-authority": "^0.7.1",

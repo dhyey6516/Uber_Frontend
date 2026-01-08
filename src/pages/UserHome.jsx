@@ -29,7 +29,7 @@ export default function UberOnboarding() {
       {/* Are you a captain? */}
       <div className='flex justify-end mr-4 mb-8'>
           <button onClick={() => navigate('/captain')} className='font-semibold text-lg text-white flex items-center gap-2'>
-            Are you a captain?
+            Are you a captain dhyey?
           </button>
           <ArrowRight className='w-6 h-6 ml-1 text-white'/>
         </div>

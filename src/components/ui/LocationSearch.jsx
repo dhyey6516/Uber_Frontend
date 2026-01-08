@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Clock, User, Plus, MapPin, ChevronDown } from 'lucide-react';
 import { api } from '../../utils/api';
+import { getCurrentLocation } from '../../utils/location';
 
 const LocationSearch = ({ onBack, onComplete }) => {
     const [pickup, setPickup] = useState('');
@@ -14,30 +15,32 @@ const LocationSearch = ({ onBack, onComplete }) => {
 
     useEffect(() => {
         // Get user location for better suggestions and auto-fill pickup
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    const { latitude, longitude } = position.coords;
-                    setUserLocation([latitude, longitude]);
+        const fetchLocation = async () => {
+            try {
+                const coords = await getCurrentLocation();
+                const { latitude, longitude } = coords;
+                setUserLocation([latitude, longitude]);
 
-                    try {
-                        // Attempt to reverse geocode to fill pickup box
-                        const res = await api.getReverseGeocode(latitude, longitude);
-                        if (res && res.address) {
-                            setPickup(res.address);
-                        } else {
-                            // Fallback if no specific address returned
-                            setPickup(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-                        }
-                    } catch (error) {
-                        console.error('Reverse geocode failed:', error);
-                        // Fallback
+                try {
+                    // Attempt to reverse geocode to fill pickup box
+                    const res = await api.getReverseGeocode(latitude, longitude);
+                    if (res && res.address) {
+                        setPickup(res.address);
+                    } else {
+                        // Fallback if no specific address returned
                         setPickup(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
                     }
-                },
-                (error) => console.error('Error getting location:', error)
-            );
-        }
+                } catch (error) {
+                    console.error('Reverse geocode failed:', error);
+                    // Fallback
+                    setPickup(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                }
+            } catch (error) {
+                console.error('Error getting location:', error);
+            }
+        };
+
+        fetchLocation();
     }, []);
 
     const fetchSuggestions = async (input) => {

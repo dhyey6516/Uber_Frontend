@@ -26,6 +26,7 @@ import Fare from './Fare'
 import { api } from '../../utils/api'
 import { socketManager } from '../../utils/socket'
 import { useToast } from '../ui/use-toast'
+import { getCurrentLocation } from '../../utils/location'
 
 // Fix for default marker icon in React-Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -200,26 +201,18 @@ const UserLanding = () => {
                     
                     // Immediately fetch route from current location to destination
                     if (destCoords) {
-                        if (navigator.geolocation) {
-                            navigator.geolocation.getCurrentPosition(
-                                async (position) => {
-                                    const { latitude, longitude } = position.coords;
-                                    setCurrentUserLocation([latitude, longitude]);
-                                    await fetchRoute(latitude, longitude, destCoords[0], destCoords[1]);
-                                },
-                                async (error) => {
-                                    console.error('Error getting location for route:', error);
-                                    // Fallback to pickup location
-                                    if (pickupCoords) {
-                                        setCurrentUserLocation(pickupCoords);
-                                        await fetchRoute(pickupCoords[0], pickupCoords[1], destCoords[0], destCoords[1]);
-                                    }
-                                }
-                            );
-                        } else if (pickupCoords) {
-                            // Fallback if geolocation not available
-                            setCurrentUserLocation(pickupCoords);
-                            await fetchRoute(pickupCoords[0], pickupCoords[1], destCoords[0], destCoords[1]);
+                        try {
+                            const coords = await getCurrentLocation();
+                            const { latitude, longitude } = coords;
+                            setCurrentUserLocation([latitude, longitude]);
+                            await fetchRoute(latitude, longitude, destCoords[0], destCoords[1]);
+                        } catch (error) {
+                            console.error('Error getting location for route:', error);
+                            // Fallback to pickup location
+                            if (pickupCoords) {
+                                setCurrentUserLocation(pickupCoords);
+                                await fetchRoute(pickupCoords[0], pickupCoords[1], destCoords[0], destCoords[1]);
+                            }
                         }
                     }
                 }
@@ -258,23 +251,20 @@ const UserLanding = () => {
     // Get user location
     useEffect(() => {
         if (!userLocation) {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const { latitude, longitude } = position.coords;
-                        setUserLocation([latitude, longitude]);
-                        setCurrentUserLocation([latitude, longitude]);
-                    },
-                    (error) => {
-                        console.error('Error getting location:', error);
-                        setUserLocation([28.6139, 77.2090]);
-                        setCurrentUserLocation([28.6139, 77.2090]);
-                    }
-                );
-            } else {
-                setUserLocation([28.6139, 77.2090]);
-                setCurrentUserLocation([28.6139, 77.2090]);
-            }
+            const fetchLocation = async () => {
+                try {
+                    const coords = await getCurrentLocation();
+                    const { latitude, longitude } = coords;
+                    setUserLocation([latitude, longitude]);
+                    setCurrentUserLocation([latitude, longitude]);
+                } catch (error) {
+                    console.error('Error getting location:', error);
+                    // Fallback to default location (Delhi)
+                    setUserLocation([28.6139, 77.2090]);
+                    setCurrentUserLocation([28.6139, 77.2090]);
+                }
+            };
+            fetchLocation();
         }
     }, []);
 
@@ -283,40 +273,31 @@ const UserLanding = () => {
         if (otpVerified && acceptedRide && destCoords) {
             // Update route immediately
             const updateRoute = async () => {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        async (position) => {
-                            const { latitude, longitude } = position.coords;
-                            const newLocation = [latitude, longitude];
-                            setCurrentUserLocation(newLocation);
-                            
-                            // Fetch route from current location to destination
-                            try {
-                                await fetchRoute(latitude, longitude, destCoords[0], destCoords[1]);
-                            } catch (err) {
-                                console.error('Error updating route:', err);
-                                // Fallback: set a simple route if API fails
-                                setRouteCoordinates([newLocation, destCoords]);
-                            }
-                        },
-                        (error) => {
-                            console.error('Error getting current location:', error);
-                            // Fallback: use pickup location if geolocation fails
-                            if (pickupCoords) {
-                                setCurrentUserLocation(pickupCoords);
-                                fetchRoute(pickupCoords[0], pickupCoords[1], destCoords[0], destCoords[1]);
-                            }
-                        },
-                        {
-                            enableHighAccuracy: true,
-                            timeout: 5000,
-                            maximumAge: 0
-                        }
-                    );
-                } else if (pickupCoords) {
-                    // Fallback if geolocation not available
-                    setCurrentUserLocation(pickupCoords);
-                    fetchRoute(pickupCoords[0], pickupCoords[1], destCoords[0], destCoords[1]);
+                try {
+                    const coords = await getCurrentLocation({
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0,
+                    });
+                    const { latitude, longitude } = coords;
+                    const newLocation = [latitude, longitude];
+                    setCurrentUserLocation(newLocation);
+                    
+                    // Fetch route from current location to destination
+                    try {
+                        await fetchRoute(latitude, longitude, destCoords[0], destCoords[1]);
+                    } catch (err) {
+                        console.error('Error updating route:', err);
+                        // Fallback: set a simple route if API fails
+                        setRouteCoordinates([newLocation, destCoords]);
+                    }
+                } catch (error) {
+                    console.error('Error getting current location:', error);
+                    // Fallback: use pickup location if geolocation fails
+                    if (pickupCoords) {
+                        setCurrentUserLocation(pickupCoords);
+                        fetchRoute(pickupCoords[0], pickupCoords[1], destCoords[0], destCoords[1]);
+                    }
                 }
             };
 
